@@ -168,17 +168,37 @@ const KAART = {
   .maten { top: 43.1%; font-size: calc(3.7 * var(--u, 1cqw)); line-height: 1.61; font-weight: 500; }
   .ouders { top: 72.2%; font-size: calc(3.15 * var(--u, 1cqw)); line-height: 1.43; font-weight: 500; }
 
+  /* ---------- Lieveheersbeestje met tekstballon (rechtsonder) ---------- */
   .tip {
-    color: var(--tekst-2); font-size: 16px; letter-spacing: .06em; font-style: italic; margin: 0;
-    animation: opkomen 1.3s 3s ease both; transition: opacity .6s;
+    position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 5;
+    display: flex; align-items: flex-end; gap: 6px; margin: 0;
+    opacity: 0; transform: translateY(40px);
+    transition: opacity .7s ease, transform .9s cubic-bezier(.22,.8,.2,1);
+    pointer-events: none;
   }
-  .tip.stil { opacity: 0; }
+  .tip.op { opacity: 1; transform: none; }
+  .tip.stil { opacity: 0; transform: translateY(40px); transition-duration: .5s, .5s; }
+  .ballon {
+    position: relative; max-width: 150px; padding: 9px 12px 10px; margin-bottom: 26px;
+    background: var(--papier-l); color: var(--plum);
+    border: 1px solid rgba(92,39,69,.22); border-radius: 14px 14px 4px 14px;
+    font-size: 15px; line-height: 1.3; font-style: italic; text-align: center; text-wrap: balance;
+  }
+  .ballon::after { /* staartje naar het beestje */
+    content: ''; position: absolute; right: -7px; bottom: 8px; width: 11px; height: 11px;
+    background: var(--papier-l); border-right: 1px solid rgba(92,39,69,.22); border-bottom: 1px solid rgba(92,39,69,.22);
+    transform: rotate(-20deg) skewX(-20deg); border-radius: 0 0 2px 0;
+  }
+  .beestje { width: 54px; height: 54px; flex: none; transform-origin: 50% 90%; animation: wiebel 3.2s ease-in-out 1s infinite; }
+  @keyframes wiebel { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(5deg); } }
 
   @keyframes opkomen { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
   @keyframes binnenkomst { from { opacity: 0; transform: translateY(40px) scale(.94); } to { opacity: 1; transform: none; } }
 
   @media (prefers-reduced-motion: reduce) {
-    .intro > *, .scene, .tip { animation-duration: .01s; animation-delay: 0s; }
+    .intro > *, .scene { animation-duration: .01s; animation-delay: 0s; }
+    .tip { transition-duration: .01s; }
+    .beestje { animation: none; }
     .flip { transition-duration: .3s; }
     .lift.los { animation: none; }
   }
@@ -187,7 +207,6 @@ const KAART = {
     .podium { gap: 18px; }
     .intro { gap: 8px; }
     .intro p { font-size: 16px; line-height: 1.4; }
-    .tip { display: none; }
   }
 </style>
 
@@ -221,7 +240,23 @@ const KAART = {
   </div>
   </div></div>
 
-  <p class="tip" id="tip">Tik op het kaartje om het om te draaien</p>
+  <div class="tip" id="tip" aria-hidden="true">
+    <div class="ballon">Tik op het kaartje om het om te draaien</div>
+    <svg class="beestje" viewBox="0 0 100 100">
+      <g transform="rotate(-14 50 55)">
+        <path d="M30 20 q-6 -10 -16 -12" fill="none" stroke="#2a1a22" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M70 20 q6 -10 16 -12" fill="none" stroke="#2a1a22" stroke-width="2.6" stroke-linecap="round"/>
+        <circle cx="50" cy="30" r="14" fill="#2a1a22"/>
+        <circle cx="44" cy="27" r="2.6" fill="#f7efe2"/><circle cx="56" cy="27" r="2.6" fill="#f7efe2"/>
+        <ellipse cx="50" cy="60" rx="32" ry="30" fill="#c6353c" stroke="#8e2228" stroke-width="2"/>
+        <path d="M50 30 v60" stroke="#2a1a22" stroke-width="2.4"/>
+        <circle cx="36" cy="50" r="5" fill="#2a1a22"/><circle cx="64" cy="50" r="5" fill="#2a1a22"/>
+        <circle cx="30" cy="68" r="4.3" fill="#2a1a22"/><circle cx="70" cy="68" r="4.3" fill="#2a1a22"/>
+        <circle cx="42" cy="80" r="3.6" fill="#2a1a22"/><circle cx="58" cy="80" r="3.6" fill="#2a1a22"/>
+        <ellipse cx="38" cy="46" rx="6" ry="3" fill="#fff" opacity=".18" transform="rotate(-25 38 46)"/>
+      </g>
+    </svg>
+  </div>
 </main>
 
 <script>
@@ -356,10 +391,11 @@ const KAART = {
   addEventListener('pointercancel', () => { sleep = null; });
 
 
+  const tipTimer = setTimeout(() => tip.classList.add('op'), beperkt ? 300 : 3600); // komt op na het kaartje
   function draaiOm() {
     om = !om; flip.classList.toggle('om', om);
     lift.classList.remove('los'); void lift.offsetWidth; lift.classList.add('los');
-    tip.classList.add('stil');
+    tip.classList.add('stil'); clearTimeout(tipTimer);
   }
   flip.addEventListener('click', () => { if (tBewogen) { tBewogen = false; return; } draaiOm(); });
   flip.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); draaiOm(); } });
